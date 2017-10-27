@@ -20,12 +20,12 @@ import java.util.List;
  */
 public class MetaDataInsert {
 
-
     public static void main(String[] args) throws IOException {
         MetaDataInsert cmd = new MetaDataInsert();
-        cmd.writeRandomMetadata("c:\\content\\Mobile_H264 - Kopie.mp4",
-                "lore ipsum tralalala");
+//        cmd.writeRandomMetadata("c:\\content\\Mobile_H264 - Kopie.mp4",
+//                "lore ipsum tralalala");
 
+        cmd.write360Metadata("~/Desktop/RYLO_20171026_150905_-0700_test.mp4");
     }
 
     public FileChannel splitFileAndInsert(File f, long pos, long length) throws IOException {
@@ -64,6 +64,51 @@ public class MetaDataInsert {
                 }
             }
             throw new RuntimeException("I need moov or mdat. Otherwise all this doesn't make sense");
+        }
+    }
+
+    private void write360Metadata(String videoFilePath) throws IOException {
+        File videoFile = new File(videoFilePath);
+        if (!videoFile.exists()) {
+            throw new FileNotFoundException("File " + videoFilePath + " not exists");
+        }
+
+        if (!videoFile.canWrite()) {
+            throw new IllegalStateException("No write permissions to file " + videoFilePath);
+        }
+        IsoFile isoFile = new IsoFile(videoFilePath);
+
+        MovieBox moov = isoFile.getBoxes(MovieBox.class).get(0);
+        FreeBox freeBox = findFreeBox(moov);
+
+        boolean correctOffset = needsOffsetCorrection(isoFile);
+        long sizeBefore = moov.getSize();
+        long offset = 0;
+
+        for (Box box : isoFile.getBoxes()) {
+            if ("moov".equals(box.getType())) {
+                break;
+            }
+            offset += box.getSize();
+        }
+
+        TrackBox videoTrack = null;
+        List<TrackBox> trackBoxes = moov.getBoxes(TrackBox.class);
+
+        for (TrackBox trackBox : trackBoxes) {
+            MediaBox mediaBox = trackBox.getMediaBox();
+            HandlerBox handlerBox = mediaBox.getHandlerBox();
+
+            String handlerType = handlerBox.getHandlerType();
+
+            if ("vide".equals(handlerType)) {
+                videoTrack = trackBox;
+                break;
+            }
+        }
+
+        if (videoTrack != null) {
+            System.out.println(videoTrack.toString());
         }
     }
 
@@ -192,6 +237,4 @@ public class MetaDataInsert {
             return buf;
         }
     }
-
-
 }

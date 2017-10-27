@@ -81,6 +81,7 @@ public class MetaBox extends AbstractContainerBox {
     public void parse(ReadableByteChannel dataSource, ByteBuffer header, long contentSize, BoxParser boxParser) throws IOException {
         ByteBuffer bb = ByteBuffer.allocate(8);
         dataSource.read(bb);
+        bb.position(4);
 
         String possibleHdlr = IsoTypeReader.read4cc(bb);
 
